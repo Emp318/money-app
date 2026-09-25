@@ -19,4 +19,16 @@ class GlobalExceptionHandler {
     fun handleValidationErrors(exception: MethodArgumentNotValidException): Map<String, String> {
         return exception.bindingResult.fieldErrors.associate { it.field to (it.defaultMessage ?: "Invalid value") }
     }
+
+    @ExceptionHandler(IllegalArgumentException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleIllegalArgument(exception: IllegalArgumentException): Map<String, String> {
+        return mapOf("error" to exception.message.orEmpty())
+    }
+
+    @ExceptionHandler(InvalidCredentialsException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun handleInvalidCredentials(exception: InvalidCredentialsException) : Map<String, String> {
+        return mapOf("error" to exception.message.orEmpty())
+    }
 }
