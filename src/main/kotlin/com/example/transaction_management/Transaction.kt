@@ -4,6 +4,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.JoinColumn
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.NotBlank
 
@@ -26,6 +28,10 @@ data class Transaction (
 
     @field:NotBlank
     var description: String,
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    var owner: User? = null
 
 
 )
