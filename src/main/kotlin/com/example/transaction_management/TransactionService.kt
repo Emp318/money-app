@@ -9,7 +9,12 @@ class TransactionService(
 ) {
 
     fun getTransactions(): List<Transaction> {
-        return transactionRepository.findAll()
+        val currentUser = getCurrentUser()
+        return if (currentUser.role == "ADMIN") {
+            transactionRepository.findAll()
+        } else {
+            transactionRepository.findByOwnerId(currentUser.id!!)
+        }
     }
 
     fun createTransaction(transaction: Transaction): Transaction {
@@ -21,12 +26,29 @@ class TransactionService(
         return transactionRepository.save(transaction)
     }
 
+    private fun getCurrentUser(): User {
+        val authentication = SecurityContextHolder.getContext().authentication
+            ?: throw IllegalStateException("No authenticated user found")
+        val email = authentication.principal as String
+        return userService.findByEmail(email)
+            ?: throw IllegalStateException("Authenticated user not found in database")
+    }
+
     fun getTransactionById(id: Long): Transaction {
-        return transactionRepository.findById(id).orElseThrow{ TransactionNotFoundException(id) }
+        val transaction = transactionRepository.findById(id).orElseThrow { TransactionNotFoundException(id) }
+        val currentUser = getCurrentUser()
+        if (currentUser.role != "ADMIN" && transaction.owner?.id != currentUser.id) {
+            throw TransactionAccessDeniedException(id)
+        }
+        return transaction
     }
 
     fun updateTransaction(id: Long, updatedTransaction: Transaction): Transaction {
         val existingTransaction = transactionRepository.findById(id).orElseThrow { TransactionNotFoundException(id) }
+        val currentUser = getCurrentUser()
+        if (currentUser.role != "ADMIN" && existingTransaction.owner?.id != currentUser.id) {
+            throw TransactionAccessDeniedException(id)
+        }
         existingTransaction.amount = updatedTransaction.amount
         existingTransaction.type = updatedTransaction.type
         existingTransaction.category = updatedTransaction.category
@@ -37,6 +59,10 @@ class TransactionService(
 
     fun deleteTransaction(id: Long): Boolean {
         val transaction = transactionRepository.findById(id).orElseThrow { TransactionNotFoundException(id) }
+        val currentUser = getCurrentUser()
+        if (currentUser.role != "ADMIN" && transaction.owner?.id != currentUser.id) {
+            throw TransactionAccessDeniedException(id)
+        }
         transactionRepository.deleteById(id)
         return true
     }

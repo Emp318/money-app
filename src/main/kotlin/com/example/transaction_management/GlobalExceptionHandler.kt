@@ -31,4 +31,10 @@ class GlobalExceptionHandler {
     fun handleInvalidCredentials(exception: InvalidCredentialsException) : Map<String, String> {
         return mapOf("error" to exception.message.orEmpty())
     }
+
+    @ExceptionHandler(TransactionAccessDeniedException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun handleTransactionAccessDenied(exception: TransactionAccessDeniedException): Map<String, String> {
+        return mapOf("error" to exception.message.orEmpty())
+    }
 }
